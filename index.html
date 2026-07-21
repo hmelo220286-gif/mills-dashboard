@@ -1108,7 +1108,24 @@ function initSync() {
   var sub = document.getElementById('sync-sub');
   if (lbl) lbl.innerHTML = '\uD83D\uDFE2 Modo sincronizado \u2014 anota\u00e7\u00f5es compartilhadas com o time';
   if (sub) sub.textContent = 'Carregando...';
-  loadFromServer();
+  // Na primeira carga, precisa re-renderizar para mostrar os dados do servidor
+  fetch('/api/anotacoes')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      Object.keys(data).forEach(function(fr) {
+        if (!EDITS[fr]) EDITS[fr] = {};
+        if (data[fr].dp !== undefined) EDITS[fr].dp = data[fr].dp;
+        if (data[fr].ob !== undefined) EDITS[fr].ob = data[fr].ob;
+      });
+      try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
+      // Na inicialização re-renderiza tudo para mostrar dados do servidor
+      applyGlobalFilter();
+      if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es carregadas';
+      showToast('\u2713 Sincronizado com o servidor');
+    })
+    .catch(function() {
+      if (sub) sub.textContent = 'Usando dados locais.';
+    });
 }
 
 function loadFromServer() {
@@ -1116,19 +1133,34 @@ function loadFromServer() {
   fetch('/api/anotacoes')
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      var changed = false;
       Object.keys(data).forEach(function(fr) {
         if (!EDITS[fr]) EDITS[fr] = {};
-        if (data[fr].dp) EDITS[fr].dp = data[fr].dp;
-        if (data[fr].ob) EDITS[fr].ob = data[fr].ob;
+        // Usar !== undefined para aceitar strings vazias (valor apagado)
+        if (data[fr].dp !== undefined) EDITS[fr].dp = data[fr].dp;
+        if (data[fr].ob !== undefined) EDITS[fr].ob = data[fr].ob;
+        changed = true;
       });
       try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
-      applyGlobalFilter();
-      if (sub) sub.textContent = 'Sincronizado: ' + new Date().toLocaleTimeString('pt-BR');
-      showToast('\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es carregadas');
+      // Atualizar campos NA TELA sem re-renderizar tudo (evita apagar texto sendo digitado)
+      if (changed) updateFieldsFromEdits();
+      if (sub) sub.textContent = '✓ Sincronizado: ' + new Date().toLocaleTimeString('pt-BR');
     })
     .catch(function() {
-      if (sub) sub.textContent = 'Usando dados locais.';
+      if (sub) sub.textContent = 'Erro de conexão.';
     });
+}
+
+// Atualiza os campos visíveis na tela sem re-renderizar toda a tabela
+function updateFieldsFromEdits() {
+  Object.keys(EDITS).forEach(function(fr) {
+    var e = EDITS[fr];
+    // Só atualiza campos que NÃO estão com foco (não interrompe digitação ativa)
+    var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
+    var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
+    if (dpEl && document.activeElement !== dpEl) dpEl.value = e.dp || '';
+    if (obEl && document.activeElement !== obEl) obEl.value = e.ob || '';
+  });
 }
 
 function saveToServer(fr, field, value) {
