@@ -232,6 +232,11 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
 .bar-wrap{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;min-width:80px;margin-top:3px}
 .bar-c{background:#b91c1c}.bar-a{background:#f59e0b}.bar-n{background:#16a34a}.bar-s{background:#d1d5db}
 
+
+.ei:focus{outline:none;border-color:#004042 !important;box-shadow:0 0 0 2px rgba(0,64,66,.15)}
+.ei::placeholder{color:#aaa}
+td .ei{transition:border-color .15s}
+
 </style>
 </head>
 <body>
@@ -761,7 +766,7 @@ function renderRows(vis){
     h+='<td style="font-size:11px;color:var(--tx3)">'+esc(d.data_exec||'\u2014')+'</td>';
     h+='<td style="font-size:11px;color:var(--tx2);max-width:220px;white-space:normal;line-height:1.3">'+esc((d.desc_om||'').substring(0,120))+'</td>';
     h+='<td onclick="event.stopPropagation()"><input type="date" class="ei" data-fr="'+esc(d.frota)+'" data-f="dp" value="'+esc(dp)+'" onchange="ed(this)" onclick="event.stopPropagation()"></td>';
-    h+='<td onclick="event.stopPropagation()"><textarea class="ei" rows="2" data-fr="'+esc(d.frota)+'" data-f="ob" oninput="ed(this)" onclick="event.stopPropagation()">'+esc(ob)+'</textarea></td>';
+    h+='<td onclick="event.stopPropagation()" style="min-width:200px;position:relative"><textarea class="ei" rows="3" data-fr="'+esc(d.frota)+'" data-f="ob" oninput="ed(this)" onclick="event.stopPropagation()" style="width:100%;min-width:180px;padding:6px 8px;border:1px solid var(--brd);border-radius:5px;font-size:12px;resize:vertical;background:#fff;color:var(--tx);line-height:1.4;min-height:60px">'+esc(ob)+'</textarea></td>';
     h+='</tr>';
   });
   var tb=document.getElementById('mtb'); if(tb)tb.innerHTML=h;
@@ -908,13 +913,18 @@ function closeM(){document.getElementById('mbg').classList.remove('show');}
 
 // ── EDIÇÃO ─────────────────────────────────────────────────────────────
 function ed(el){
-  var fr=el.dataset.fr,f=el.dataset.f;
+  var fr=el.dataset.fr,f=el.dataset.f,val=el.value;
   if(!EDITS[fr])EDITS[fr]={};
-  EDITS[fr][f]=el.value;
+  EDITS[fr][f]=val;
   try{localStorage.setItem('mills_v3',JSON.stringify(EDITS));}catch(err){}
   var sub=document.getElementById('sync-sub');
   if(sub)sub.textContent='Salvando...';
-  saveToServer(fr,EDITS[fr].dp||'',EDITS[fr].ob||'');
+  // Pegar valores atuais dos campos na tela (não do cache)
+  var dpEl=document.querySelector('[data-fr="'+fr+'"][data-f="dp"]');
+  var obEl=document.querySelector('[data-fr="'+fr+'"][data-f="ob"]');
+  var dpVal=dpEl?dpEl.value:(EDITS[fr].dp||'');
+  var obVal=obEl?obEl.value:(EDITS[fr].ob||'');
+  saveToServer(fr,dpVal,obVal);
 }
 function saveAll(){
   try{localStorage.setItem('mills_v3',JSON.stringify(EDITS));}catch(err){}
