@@ -919,12 +919,8 @@ function ed(el){
   try{localStorage.setItem('mills_v3',JSON.stringify(EDITS));}catch(err){}
   var sub=document.getElementById('sync-sub');
   if(sub)sub.textContent='Salvando...';
-  // Pegar valores atuais dos campos na tela (não do cache)
-  var dpEl=document.querySelector('[data-fr="'+fr+'"][data-f="dp"]');
-  var obEl=document.querySelector('[data-fr="'+fr+'"][data-f="ob"]');
-  var dpVal=dpEl?dpEl.value:(EDITS[fr].dp||'');
-  var obVal=obEl?obEl.value:(EDITS[fr].ob||'');
-  saveToServer(fr,dpVal,obVal);
+  // Enviar APENAS o campo editado — não sobrescreve outros campos
+  saveToServer(fr, f, val);
 }
 function saveAll(){
   try{localStorage.setItem('mills_v3',JSON.stringify(EDITS));}catch(err){}
@@ -1135,16 +1131,16 @@ function loadFromServer() {
     });
 }
 
-function saveToServer(fr, dp, ob) {
+function saveToServer(fr, field, value) {
   if (SYNC_TIMER) clearTimeout(SYNC_TIMER);
-  SYNC_PENDING[fr] = { frota: fr, dp: dp, ob: ob };
+  // Guardar campo específico — chave única por frota+campo
+  SYNC_PENDING[fr + ':' + field] = { frota: fr, field: field, value: value };
   SYNC_TIMER = setTimeout(function() {
     var pending = SYNC_PENDING;
     SYNC_PENDING = {};
-    Object.keys(pending).forEach(function(k) {
-      var p = pending[k];
-      var sub = document.getElementById('sync-sub');
-      fetch('/api/anotacoes', {
+    var sub = document.getElementById('sync-sub');
+    var reqs = Object.values(pending).map(function(p) {
+      return fetch('/api/anotacoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p)
@@ -1155,15 +1151,15 @@ function saveToServer(fr, dp, ob) {
           if (data.ok) {
             sub.textContent = '✓ Salvo: ' + new Date().toLocaleTimeString('pt-BR');
           } else {
-            sub.textContent = '⚠ Erro ao salvar: ' + (data.error || 'desconhecido');
+            sub.textContent = '⚠ Erro: ' + (data.error || 'desconhecido');
           }
         }
       })
-      .catch(function(err) {
-        if (sub) sub.textContent = '⚠ Sem conexão com servidor';
+      .catch(function() {
+        if (sub) sub.textContent = '⚠ Sem conexão';
       });
     });
-  }, 1000);
+  }, 800);
 }
 
 function manualSync() { loadFromServer(); }
