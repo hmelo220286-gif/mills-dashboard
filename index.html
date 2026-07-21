@@ -1133,16 +1133,25 @@ function saveToServer(fr, dp, ob) {
     SYNC_PENDING = {};
     Object.keys(pending).forEach(function(k) {
       var p = pending[k];
+      var sub = document.getElementById('sync-sub');
       fetch('/api/anotacoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p)
       })
-      .then(function() {
-        var sub = document.getElementById('sync-sub');
-        if (sub) sub.textContent = '✓ Salvo: ' + new Date().toLocaleTimeString('pt-BR');
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (sub) {
+          if (data.ok) {
+            sub.textContent = '✓ Salvo: ' + new Date().toLocaleTimeString('pt-BR');
+          } else {
+            sub.textContent = '⚠ Erro ao salvar: ' + (data.error || 'desconhecido');
+          }
+        }
       })
-      .catch(function() {});
+      .catch(function(err) {
+        if (sub) sub.textContent = '⚠ Sem conexão com servidor';
+      });
     });
   }, 1000);
 }
