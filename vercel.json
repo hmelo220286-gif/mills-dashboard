@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/anotacoes", "destination": "/api/anotacoes.js" }
+  ]
+}
