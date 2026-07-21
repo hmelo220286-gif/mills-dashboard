@@ -246,7 +246,6 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
   <span class="hm" id="hm">284 equipamentos&nbsp;|&nbsp;Ref. 06/07/2026</span>
   <button class="hb hbg" onclick="doExport('csv')">&#8595; CSV</button>
   <button class="hb hbg" onclick="doExport('excel')">&#8595; Excel</button>
-  <button class="hb hbo" onclick="saveAll()">&#10003; Salvar</button>
 </header>
 <nav class="tabs">
   <div class="tab active" onclick="switchTab('dashboard',this)">&#9634; Dashboard</div>
@@ -258,9 +257,8 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;opacity:.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
   <div style="flex:1">
     <b id="sync-label" style="font-size:12px;display:block;margin-bottom:1px">&#128308; Conectando...</b>
-    <span id="sync-sub" style="font-size:11px;opacity:.75">Aguarde</span>
+    <span id="sync-sub" style="font-size:11px;opacity:.75">Aguarde... (atualiza automaticamente a cada 30s)</span>
   </div>
-  <button onclick="manualSync()" style="padding:4px 12px;border-radius:6px;border:none;background:#F37021;color:#fff;font-size:11px;font-weight:600;cursor:pointer">&#8635; Atualizar</button>
 </div>
 <div id="global-filters" style="background:#004042;padding:10px 20px 12px;border-top:1px solid rgba(255,255,255,.1)">
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
@@ -763,7 +761,7 @@ function renderRows(vis){
     h+='<td style="font-size:11px;color:var(--tx3)">'+esc(d.data_exec||'\u2014')+'</td>';
     h+='<td style="font-size:11px;color:var(--tx2);max-width:220px;white-space:normal;line-height:1.3">'+esc((d.desc_om||'').substring(0,120))+'</td>';
     h+='<td onclick="event.stopPropagation()"><input type="date" class="ei" data-fr="'+esc(d.frota)+'" data-f="dp" value="'+esc(dp)+'" onchange="ed(this)" onclick="event.stopPropagation()"></td>';
-    h+='<td onclick="event.stopPropagation()"><textarea class="ei" rows="2" data-fr="'+esc(d.frota)+'" data-f="ob" onchange="ed(this)" onclick="event.stopPropagation()">'+esc(ob)+'</textarea></td>';
+    h+='<td onclick="event.stopPropagation()"><textarea class="ei" rows="2" data-fr="'+esc(d.frota)+'" data-f="ob" oninput="ed(this)" onclick="event.stopPropagation()">'+esc(ob)+'</textarea></td>';
     h+='</tr>';
   });
   var tb=document.getElementById('mtb'); if(tb)tb.innerHTML=h;
@@ -914,6 +912,8 @@ function ed(el){
   if(!EDITS[fr])EDITS[fr]={};
   EDITS[fr][f]=el.value;
   try{localStorage.setItem('mills_v3',JSON.stringify(EDITS));}catch(err){}
+  var sub=document.getElementById('sync-sub');
+  if(sub)sub.textContent='Salvando...';
   saveToServer(fr,EDITS[fr].dp||'',EDITS[fr].ob||'');
 }
 function saveAll(){
@@ -1140,7 +1140,7 @@ function saveToServer(fr, dp, ob) {
       })
       .then(function() {
         var sub = document.getElementById('sync-sub');
-        if (sub) sub.textContent = 'Salvo: ' + new Date().toLocaleTimeString('pt-BR');
+        if (sub) sub.textContent = '✓ Salvo: ' + new Date().toLocaleTimeString('pt-BR');
       })
       .catch(function() {});
     });
@@ -1152,6 +1152,11 @@ function manualSync() { loadFromServer(); }
 // ── INIT ───────────────────────────────────────────────────────────────
 applyGlobalFilter();
 initSync();
+// Auto-refresh a cada 30 segundos
+setInterval(function(){
+  loadFromServer();
+}, 30000);
+
 
 </script>
 <div id="st-tip" style="position:fixed;background:rgba(0,40,42,.93);color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;display:none;z-index:300;line-height:1.8;min-width:170px;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>
