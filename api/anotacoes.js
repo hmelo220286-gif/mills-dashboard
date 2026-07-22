@@ -21,10 +21,7 @@ export default async function handler(req, res) {
       const rows = await r.json();
       const result = {};
       (rows || []).forEach(row => {
-        if (row.frota) result[row.frota] = {
-          dp: row.dp !== null ? (row.dp || '') : '',
-          ob: row.ob !== null ? (row.ob || '') : ''
-        };
+        if (row.frota) result[row.frota] = { dp: row.dp || '', ob: row.ob || '' };
       });
       return res.status(200).json(result);
     }
@@ -35,41 +32,36 @@ export default async function handler(req, res) {
         try { body = JSON.parse(body); } catch(e) { body = {}; }
       }
       const { frota, field, value } = body || {};
-      if (!frota || !field) return res.status(400).json({ error: 'frota e field obrigatórios' });
+      if (!frota || !field) return res.status(400).json({ error: 'frota e field obrigatorios' });
 
-      const checkR = await fetch(
-        `${base}?frota=eq.${encodeURIComponent(frota)}&select=id`,
-        { headers: hdrs }
-      );
-      const existing = await checkR.json();
+      const update = {};
+      update[field] = value;
 
-      let r;
-      if (existing && existing.length > 0) {
-        const update = {};
-        update[field] = value;
-        r = await fetch(`${base}?frota=eq.${encodeURIComponent(frota)}`, {
-          method: 'PATCH',
-          headers: { ...hdrs, 'Prefer': 'return=minimal' },
-          body: JSON.stringify(update)
-        });
-      } else {
+      const patchR = await fetch(`${base}?frota=eq.${encodeURIComponent(frota)}`, {
+        method: 'PATCH',
+        headers: { ...hdrs, 'Prefer': 'return=representation' },
+        body: JSON.stringify(update)
+      });
+      const patchData = await patchR.json();
+
+      if (Array.isArray(patchData) && patchData.length === 0) {
         const insert = { frota, dp: '', ob: '' };
         insert[field] = value;
-        r = await fetch(base, {
+        const insR = await fetch(base, {
           method: 'POST',
           headers: { ...hdrs, 'Prefer': 'return=minimal' },
           body: JSON.stringify(insert)
         });
+        if (!insR.ok) {
+          const txt = await insR.text();
+          return res.status(200).json({ error: `INSERT ${insR.status}`, detail: txt.substring(0,200) });
+        }
       }
 
-      if (!r.ok) {
-        const txt = await r.text();
-        return res.status(200).json({ error: `SAVE falhou: ${r.status}`, detail: txt.substring(0,300) });
-      }
       return res.status(200).json({ ok: true });
     }
 
-    return res.status(405).json({ error: 'Método não permitido' });
+    return res.status(405).json({ error: 'metodo nao permitido' });
   } catch (err) {
     return res.status(200).json({ error: err.message });
   }
