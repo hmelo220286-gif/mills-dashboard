@@ -21,7 +21,10 @@ export default async function handler(req, res) {
       const rows = await r.json();
       const result = {};
       (rows || []).forEach(row => {
-        if (row.frota) result[row.frota] = { dp: row.dp || '', ob: row.ob || '' };
+        if (row.frota) result[row.frota] = {
+          dp: row.dp === null ? null : (row.dp || ''),
+          ob: row.ob === null ? null : (row.ob || '')
+        };
       });
       return res.status(200).json(result);
     }
@@ -34,17 +37,12 @@ export default async function handler(req, res) {
       const { frota, field, value } = body || {};
       if (!frota || !field) return res.status(400).json({ error: 'frota e field obrigatórios' });
 
-      const upsertHdrs = {
-        ...hdrs,
-        'Prefer': 'resolution=merge-duplicates,return=minimal'
-      };
-
       const payload = { frota };
       payload[field] = value;
 
       const r = await fetch(`${base}?on_conflict=frota`, {
         method: 'POST',
-        headers: upsertHdrs,
+        headers: { ...hdrs, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify(payload)
       });
 
