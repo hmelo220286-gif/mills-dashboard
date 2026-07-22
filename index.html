@@ -1090,8 +1090,8 @@ function initSync() {
     .then(function(data) {
       Object.keys(data).forEach(function(fr) {
         if (!EDITS[fr]) EDITS[fr] = {};
-        if (data[fr].dp) EDITS[fr].dp = data[fr].dp;
-        if (data[fr].ob) EDITS[fr].ob = data[fr].ob;
+        EDITS[fr].dp = (data[fr].dp !== undefined && data[fr].dp !== null) ? data[fr].dp : EDITS[fr].dp;
+        EDITS[fr].ob = (data[fr].ob !== undefined && data[fr].ob !== null) ? data[fr].ob : EDITS[fr].ob;
       });
       try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
       if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es';
@@ -1112,11 +1112,11 @@ function initSync() {
           var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
           var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
           if (dpEl && document.activeElement !== dpEl) {
-            EDITS[fr].dp = data[fr].dp;
+            EDITS[fr].dp = data[fr].dp || '';
             dpEl.value = data[fr].dp || '';
           }
           if (obEl && document.activeElement !== obEl) {
-            EDITS[fr].ob = data[fr].ob;
+            EDITS[fr].ob = data[fr].ob || '';
             obEl.value = data[fr].ob || '';
           }
         });
