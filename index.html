@@ -1112,7 +1112,13 @@ function ed(el) {
       }
     })
     .catch(function() { setSub('\u26A0 Sem conex\u00e3o'); });
-  }, 1000);
+  }, 500);
+}
+
+
+function clearDp(fr) {
+  var el = document.getElementById('dp_' + fr);
+  if (el) { el.value = ''; ed(el); }
 }
 
 function saveAll() { showToast('\u2713 Salvo'); }
