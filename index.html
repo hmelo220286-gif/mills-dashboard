@@ -1078,7 +1078,8 @@ function drawHBar(id,labels,vals,color){
 // ═══════════════════════════════════════════════════════
 
 var TIMERS = {};
-var SAVING = {}; // requests em andamento: { 'frota:campo': true }
+var SAVING = {};
+var LAST_EDIT = 0; // requests em andamento: { 'frota:campo': true }
 
 // Chamado ao editar qualquer campo editável
 function saveField(fr, f, val) {
@@ -1088,7 +1089,7 @@ function saveField(fr, f, val) {
   try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(x) {}
   setSub('Salvando...');
   if (TIMERS[key]) { clearTimeout(TIMERS[key]); delete TIMERS[key]; }
-  // Marcar como salvando — bloqueia syncFromServer neste campo
+  LAST_EDIT = Date.now();
   SAVING[key] = true;
   fetch('/api/anotacoes', {
     method: 'POST',
@@ -1146,6 +1147,8 @@ function setSub(txt) {
 // Carregar dados do servidor e preencher campos
 // Ignora campos com timer ativo ou com foco
 function syncFromServer() {
+  // Não sincronizar se houve edição recente
+  if (Date.now() - LAST_EDIT < 5000) return;
   fetch('/api/anotacoes?t=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -1175,13 +1178,13 @@ function initSync() {
   if (lbl) lbl.innerHTML = '\uD83D\uDFE2 Modo sincronizado \u2014 anota\u00e7\u00f5es compartilhadas com o time';
   setSub('Carregando...');
 
-  // Carga inicial — aguarda tabela renderizar antes de preencher campos
+  // Carga inicial após 3s — tabela já renderizada e usuário ainda não editou
   setTimeout(function() {
     syncFromServer();
-  }, 500);
+  }, 3000);
 
   // Refresh a cada 10s
-  setInterval(syncFromServer, 10000);
+  setInterval(syncFromServer, 20000);
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────
