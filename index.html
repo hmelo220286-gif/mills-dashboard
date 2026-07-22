@@ -754,7 +754,7 @@ function renderRows(vis){
     h+='<td style="font-size:11px;color:var(--tx3)">'+esc(d.data_exec||'\u2014')+'</td>';
     h+='<td style="font-size:11px;color:var(--tx2);max-width:220px;white-space:normal">'+esc((d.desc_om||'').substring(0,120))+'</td>';
     h+='<td onclick="event.stopPropagation()"><input type="date" class="ei" data-fr="'+esc(d.frota)+'" data-f="dp" value="'+esc(dp)+'" onchange="ed(this)" onclick="event.stopPropagation()"></td>';
-    h+='<td onclick="event.stopPropagation()" style="min-width:200px"><textarea class="ei" rows="3" data-fr="'+esc(d.frota)+'" data-f="ob" oninput="ed(this)" onblur="ed(this)" onclick="event.stopPropagation()" style="width:100%;min-width:190px;padding:6px 8px;border:1.5px solid #ccc;border-radius:5px;font-size:12px;resize:vertical;background:#fff;min-height:62px">'+esc(ob)+'</textarea></td>';
+    h+='<td onclick="event.stopPropagation()" style="min-width:200px"><textarea class="ei" rows="3" data-fr="'+esc(d.frota)+'" data-f="ob" oninput="ed(this)" onblur="edNow(this)" onclick="event.stopPropagation()" style="width:100%;min-width:190px;padding:6px 8px;border:1.5px solid #ccc;border-radius:5px;font-size:12px;resize:vertical;background:#fff;min-height:62px">'+esc(ob)+'</textarea></td>';
     h+='</tr>';
   });
   var tb=document.getElementById('mtb'); if(tb)tb.innerHTML=h;
@@ -1080,39 +1080,49 @@ function drawHBar(id,labels,vals,color){
 var TIMERS = {}; // timer por campo: { 'frota:campo': timeoutId }
 
 // Chamado ao editar qualquer campo editável
-function ed(el) {
-  var fr  = el.dataset.fr;
-  var f   = el.dataset.f;
-  var val = el.value;
+function saveField(fr, f, val) {
   var key = fr + ':' + f;
-
-  // Salvar no EDITS local
   if (!EDITS[fr]) EDITS[fr] = {};
   EDITS[fr][f] = val;
   try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(x) {}
-
-  // Status
   setSub('Salvando...');
+  // Cancelar timer pendente deste campo (se houver)
+  if (TIMERS[key]) { clearTimeout(TIMERS[key]); delete TIMERS[key]; }
+  // Enviar imediatamente ao servidor
+  fetch('/api/anotacoes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ frota: fr, field: f, value: val })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) {
+      setSub('\u2713 Salvo \u00e0s ' + new Date().toLocaleTimeString('pt-BR'));
+    } else {
+      setSub('\u26A0 Erro: ' + (res.error || res.detail || 'falha'));
+    }
+  })
+  .catch(function() { setSub('\u26A0 Sem conex\u00e3o'); });
+}
 
-  // Timer independente por campo — não cancela outros campos
+function ed(el) {
+  // oninput: debounce 800ms para não enviar a cada tecla
+  var fr = el.dataset.fr, f = el.dataset.f, val = el.value;
+  var key = fr + ':' + f;
+  if (!EDITS[fr]) EDITS[fr] = {};
+  EDITS[fr][f] = val;
+  try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(x) {}
+  setSub('Salvando...');
   if (TIMERS[key]) clearTimeout(TIMERS[key]);
   TIMERS[key] = setTimeout(function() {
     delete TIMERS[key];
-    fetch('/api/anotacoes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ frota: fr, field: f, value: val })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-      if (res.ok) {
-        setSub('\u2713 Salvo \u00e0s ' + new Date().toLocaleTimeString('pt-BR'));
-      } else {
-        setSub('\u26A0 Erro: ' + (res.error || res.detail || 'falha'));
-      }
-    })
-    .catch(function() { setSub('\u26A0 Sem conex\u00e3o'); });
-  }, 500);
+    saveField(fr, f, val);
+  }, 800);
+}
+
+function edNow(el) {
+  // onblur/onchange: salva imediatamente ao sair do campo
+  saveField(el.dataset.fr, el.dataset.f, el.value);
 }
 
 
