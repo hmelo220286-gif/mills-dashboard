@@ -1094,7 +1094,6 @@ function initSync() {
         if (data[fr].ob) EDITS[fr].ob = data[fr].ob;
       });
       try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
-      applyGlobalFilter();
       if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es';
     })
     .catch(function() {
