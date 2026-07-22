@@ -1093,6 +1093,13 @@ function initSync() {
         EDITS[fr].ob = (data[fr].ob !== undefined && data[fr].ob !== null) ? data[fr].ob : EDITS[fr].ob;
       });
       try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
+      // Atualizar campos na tela com dados do servidor
+      Object.keys(data).forEach(function(fr) {
+        var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
+        var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
+        if (dpEl) dpEl.value = data[fr].dp || '';
+        if (obEl) obEl.value = data[fr].ob || '';
+      });
       if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es';
     })
     .catch(function() {
@@ -1102,6 +1109,7 @@ function initSync() {
   // Refresh a cada 60s — apenas atualiza campos sem foco
   setInterval(function() {
     if (SYNC_SAVING) return;
+    if (Object.keys(SYNC_TIMERS).length > 0) return; // Há salvamentos pendentes
     if (Date.now() - LAST_EDIT_TIME < 5000) return;
     fetch('/api/anotacoes?t=' + Date.now())
       .then(function(r) { return r.json(); })
@@ -1110,11 +1118,13 @@ function initSync() {
           if (!EDITS[fr]) EDITS[fr] = {};
           var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
           var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
-          if (dpEl && document.activeElement !== dpEl) {
+          var dpPending = SYNC_TIMERS[fr + ":dp"];
+          var obPending = SYNC_TIMERS[fr + ":ob"];
+          if (dpEl && document.activeElement !== dpEl && !dpPending) {
             EDITS[fr].dp = data[fr].dp || '';
             dpEl.value = data[fr].dp || '';
           }
-          if (obEl && document.activeElement !== obEl) {
+          if (obEl && document.activeElement !== obEl && !obPending) {
             EDITS[fr].ob = data[fr].ob || '';
             obEl.value = data[fr].ob || '';
           }
