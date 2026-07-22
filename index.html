@@ -900,8 +900,8 @@ function openM(idx){
 function closeM(){document.getElementById('mbg').classList.remove('show');}
 
 // ── EDIÇÃO ─────────────────────────────────────────────────────────────
-// ed() definido pelo sync
-// saveAll() definido pelo sync
+/* ed() definido pelo sync */
+/* saveAll() definido pelo sync */
 
 // ── EXPORT ─────────────────────────────────────────────────────────────
 function doExport(fmt){
@@ -1071,121 +1071,106 @@ function drawHBar(id,labels,vals,color){
   }
 }
 
-// ═══════════════════════════════════════════════════
-//  SYNC SUPABASE v3 — UMA SÓ função de cada
-// ═══════════════════════════════════════════════════
-var SYNC_SAVING    = false;
-var LAST_EDIT_TIME = 0;
+// ═══════════════════════════════════════════════
+// SYNC v4 — abordagem simples e robusta
+// Princípio: salvar imediatamente, carregar só na abertura
+// ═══════════════════════════════════════════════
 
-function initSync() {
-  var lbl = document.getElementById('sync-label');
-  var sub = document.getElementById('sync-sub');
-  if (lbl) lbl.innerHTML = '\uD83D\uDFE2 Sincronizado com o time';
-  if (sub) sub.textContent = 'Carregando...';
+var PENDING = {}; // { 'EHS01:dp': timer, 'EHS01:ob': timer }
 
-  // Carga inicial
-  fetch('/api/anotacoes?t=' + Date.now())
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      Object.keys(data).forEach(function(fr) {
-        if (!EDITS[fr]) EDITS[fr] = {};
-        EDITS[fr].dp = (data[fr].dp !== undefined && data[fr].dp !== null) ? data[fr].dp : EDITS[fr].dp;
-        EDITS[fr].ob = (data[fr].ob !== undefined && data[fr].ob !== null) ? data[fr].ob : EDITS[fr].ob;
-      });
-      try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
-      // Atualizar campos na tela com dados do servidor
-      Object.keys(data).forEach(function(fr) {
-        var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
-        var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
-        if (dpEl) dpEl.value = data[fr].dp || '';
-        if (obEl) obEl.value = data[fr].ob || '';
-      });
-      if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es';
-    })
-    .catch(function() {
-      if (sub) sub.textContent = 'Offline - dados locais';
-    });
-
-  // Refresh a cada 60s — apenas atualiza campos sem foco
-  setInterval(function() {
-    if (SYNC_SAVING) return;
-    if (Object.keys(SYNC_TIMERS).length > 0) return; // Há salvamentos pendentes
-    if (Date.now() - LAST_EDIT_TIME < 5000) return;
-    fetch('/api/anotacoes?t=' + Date.now())
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        Object.keys(data).forEach(function(fr) {
-          if (!EDITS[fr]) EDITS[fr] = {};
-          var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
-          var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
-          var dpPending = SYNC_TIMERS[fr + ":dp"];
-          var obPending = SYNC_TIMERS[fr + ":ob"];
-          if (dpEl && document.activeElement !== dpEl && !dpPending) {
-            EDITS[fr].dp = data[fr].dp || '';
-            dpEl.value = data[fr].dp || '';
-          }
-          if (obEl && document.activeElement !== obEl && !obPending) {
-            EDITS[fr].ob = data[fr].ob || '';
-            obEl.value = data[fr].ob || '';
-          }
-        });
-        try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
-        var s2 = document.getElementById('sync-sub');
-        if (s2) s2.textContent = '\u2713 ' + new Date().toLocaleTimeString('pt-BR');
-      })
-      .catch(function() {});
-  }, 10000);
-}
-
-// Timer por campo — chave: frota+campo
-var SYNC_TIMERS = {};
-
+// ── Chamada quando qualquer campo é editado ──
 function ed(el) {
   var fr  = el.dataset.fr;
   var f   = el.dataset.f;
   var val = el.value;
   var key = fr + ':' + f;
 
+  // 1. Salvar local imediatamente
   if (!EDITS[fr]) EDITS[fr] = {};
   EDITS[fr][f] = val;
   try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
 
-  SYNC_SAVING    = true;
-  LAST_EDIT_TIME = Date.now();
-
+  // 2. Status
   var sub = document.getElementById('sync-sub');
   if (sub) sub.textContent = 'Salvando...';
 
-  // Timer independente por campo — não cancela outros campos
-  if (SYNC_TIMERS[key]) clearTimeout(SYNC_TIMERS[key]);
-  SYNC_TIMERS[key] = setTimeout(function() {
-    delete SYNC_TIMERS[key];
+  // 3. Debounce por campo — cada campo tem seu próprio timer independente
+  if (PENDING[key]) clearTimeout(PENDING[key]);
+  PENDING[key] = setTimeout(function() {
+    delete PENDING[key];
     fetch('/api/anotacoes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ frota: fr, field: f, value: val })
     })
     .then(function(r) { return r.json(); })
-    .then(function(result) {
-      // Só marca como não-salvando quando todos os timers terminarem
-      if (Object.keys(SYNC_TIMERS).length === 0) SYNC_SAVING = false;
+    .then(function(res) {
       var s2 = document.getElementById('sync-sub');
-      if (result.ok) {
+      if (res.ok) {
         if (s2) s2.textContent = '\u2713 Salvo \u00e0s ' + new Date().toLocaleTimeString('pt-BR');
       } else {
-        if (s2) s2.textContent = '\u26A0 Erro: ' + (result.error || '');
+        if (s2) s2.textContent = '\u26A0 ' + (res.error || 'Erro ao salvar');
       }
     })
     .catch(function() {
-      if (Object.keys(SYNC_TIMERS).length === 0) SYNC_SAVING = false;
       var s2 = document.getElementById('sync-sub');
       if (s2) s2.textContent = '\u26A0 Sem conex\u00e3o';
     });
   }, 1500);
 }
 
-function saveAll() {
-  showToast('\u2713 Salvo automaticamente');
+function saveAll() { showToast('\u2713 Salvo automaticamente'); }
+
+// ── Carregar dados do servidor ──────────────────
+function loadData(callback) {
+  fetch('/api/anotacoes?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      // Atualizar EDITS com dados do servidor
+      Object.keys(data).forEach(function(fr) {
+        if (!EDITS[fr]) EDITS[fr] = {};
+        EDITS[fr].dp = data[fr].dp || '';
+        EDITS[fr].ob = data[fr].ob || '';
+      });
+      try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(e) {}
+      if (callback) callback(data);
+    })
+    .catch(function() {});
+}
+
+// ── Atualizar campos na tela sem re-renderizar ──
+function updateFields(data) {
+  Object.keys(data).forEach(function(fr) {
+    // Só atualiza campos que NÃO estão com edição pendente
+    if (!PENDING[fr + ':dp']) {
+      var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
+      if (dpEl && document.activeElement !== dpEl) dpEl.value = data[fr].dp || '';
+    }
+    if (!PENDING[fr + ':ob']) {
+      var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
+      if (obEl && document.activeElement !== obEl) obEl.value = data[fr].ob || '';
+    }
+  });
+}
+
+// ── Inicialização ───────────────────────────────
+function initSync() {
+  var lbl = document.getElementById('sync-label');
+  var sub = document.getElementById('sync-sub');
+  if (lbl) lbl.innerHTML = '\uD83D\uDFE2 Modo sincronizado \u2014 anota\u00e7\u00f5es compartilhadas com o time';
+  if (sub) sub.textContent = 'Carregando...';
+
+  // Carregar na abertura e renderizar tabela
+  loadData(function(data) {
+    applyGlobalFilter(); // renderiza tabela com dados do servidor
+    if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es carregadas';
+  });
+
+  // Refresh silencioso a cada 10s — só atualiza campos sem edição pendente
+  setInterval(function() {
+    if (Object.keys(PENDING).length > 0) return; // aguarda salvamentos terminarem
+    loadData(function(data) { updateFields(data); });
+  }, 10000);
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────
