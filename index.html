@@ -753,7 +753,7 @@ function renderRows(vis){
     h+='<td style="'+(hs>500?'color:#b91c1c;font-weight:700':'')+'">'+(hs?nf(hs):'\u2014')+'</td>';
     h+='<td style="font-size:11px;color:var(--tx3)">'+esc(d.data_exec||'\u2014')+'</td>';
     h+='<td style="font-size:11px;color:var(--tx2);max-width:220px;white-space:normal">'+esc((d.desc_om||'').substring(0,120))+'</td>';
-    h+='<td onclick="event.stopPropagation()"><input type="date" class="ei" data-fr="'+esc(d.frota)+'" data-f="dp" value="'+esc(dp)+'" onchange="ed(this)" onclick="event.stopPropagation()"></td>';
+    h+='<td onclick="event.stopPropagation()"><input type="date" class="ei" data-fr="'+esc(d.frota)+'" data-f="dp" value="'+esc(dp)+'" onchange="ed(this)" onblur="ed(this)" oninput="ed(this)" onclick="event.stopPropagation()"></td>';
     h+='<td onclick="event.stopPropagation()" style="min-width:200px"><textarea class="ei" rows="3" data-fr="'+esc(d.frota)+'" data-f="ob" oninput="ed(this)" onclick="event.stopPropagation()" style="width:100%;min-width:190px;padding:6px 8px;border:1.5px solid #ccc;border-radius:5px;font-size:12px;resize:vertical;background:#fff;min-height:62px">'+esc(ob)+'</textarea></td>';
     h+='</tr>';
   });
