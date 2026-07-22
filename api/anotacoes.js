@@ -22,8 +22,8 @@ export default async function handler(req, res) {
       const result = {};
       (rows || []).forEach(row => {
         if (row.frota) result[row.frota] = {
-          dp: row.dp === null ? null : (row.dp || ''),
-          ob: row.ob === null ? null : (row.ob || '')
+          dp: row.dp !== null ? (row.dp || '') : '',
+          ob: row.ob !== null ? (row.ob || '') : ''
         };
       });
       return res.status(200).json(result);
@@ -37,20 +37,35 @@ export default async function handler(req, res) {
       const { frota, field, value } = body || {};
       if (!frota || !field) return res.status(400).json({ error: 'frota e field obrigatórios' });
 
-      const payload = { frota };
-      payload[field] = value;
+      const checkR = await fetch(
+        `${base}?frota=eq.${encodeURIComponent(frota)}&select=id`,
+        { headers: hdrs }
+      );
+      const existing = await checkR.json();
 
-      const r = await fetch(`${base}?on_conflict=frota`, {
-        method: 'POST',
-        headers: { ...hdrs, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify(payload)
-      });
+      let r;
+      if (existing && existing.length > 0) {
+        const update = {};
+        update[field] = value;
+        r = await fetch(`${base}?frota=eq.${encodeURIComponent(frota)}`, {
+          method: 'PATCH',
+          headers: { ...hdrs, 'Prefer': 'return=minimal' },
+          body: JSON.stringify(update)
+        });
+      } else {
+        const insert = { frota, dp: '', ob: '' };
+        insert[field] = value;
+        r = await fetch(base, {
+          method: 'POST',
+          headers: { ...hdrs, 'Prefer': 'return=minimal' },
+          body: JSON.stringify(insert)
+        });
+      }
 
       if (!r.ok) {
         const txt = await r.text();
         return res.status(200).json({ error: `SAVE falhou: ${r.status}`, detail: txt.substring(0,300) });
       }
-
       return res.status(200).json({ ok: true });
     }
 
