@@ -1088,7 +1088,7 @@ function initSync() {
   if (sub) sub.textContent = 'Carregando...';
   loadFromServer(true);
   // Auto-refresh silencioso a cada 30s
-  setInterval(function() { loadFromServer(false); }, 30000);
+  setInterval(function() { loadFromServer(false); }, 60000);
 }
 
 function loadFromServer(rerender) {
@@ -1133,6 +1133,7 @@ function loadFromServer(rerender) {
 // ═══════════════════════════════════════════════════════
 var SYNC_TIMER    = null;
 var SYNC_SAVING   = false; // true enquanto há salvamento pendente
+var LAST_EDIT_TIME = 0; // timestamp da última edição
 
 function initSync() {
   var lbl = document.getElementById('sync-label');
@@ -1163,6 +1164,7 @@ function initSync() {
   // Refresh silencioso a cada 45 segundos (só atualiza se não está salvando)
   setInterval(function() {
     if (SYNC_SAVING) return; // Não atualiza se há salvamento em andamento
+    if (Date.now() - LAST_EDIT_TIME < 10000) return; // Aguarda 10s após última edição
     fetch('/api/anotacoes?t=' + Date.now())
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -1206,6 +1208,7 @@ function ed(el) {
 
   // Marcar como pendente
   SYNC_SAVING = true;
+  LAST_EDIT_TIME = Date.now();
 
   // Debounce 1.2s para enviar ao servidor
   if (SYNC_TIMER) clearTimeout(SYNC_TIMER);
@@ -1230,7 +1233,7 @@ function ed(el) {
       var s2 = document.getElementById('sync-sub');
       if (s2) s2.textContent = '\u26A0 Sem conex\u00e3o com servidor';
     });
-  }, 1200);
+  }, 2500);
 }
 
 function saveAll() {
