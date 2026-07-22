@@ -1103,7 +1103,7 @@ function initSync() {
   // Refresh a cada 60s — apenas atualiza campos sem foco
   setInterval(function() {
     if (SYNC_SAVING) return;
-    if (Date.now() - LAST_EDIT_TIME < 15000) return;
+    if (Date.now() - LAST_EDIT_TIME < 5000) return;
     fetch('/api/anotacoes?t=' + Date.now())
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -1125,7 +1125,7 @@ function initSync() {
         if (s2) s2.textContent = '\u2713 ' + new Date().toLocaleTimeString('pt-BR');
       })
       .catch(function() {});
-  }, 60000);
+  }, 10000);
 }
 
 function ed(el) {
