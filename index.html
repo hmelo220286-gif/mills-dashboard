@@ -1074,7 +1074,6 @@ function drawHBar(id,labels,vals,color){
 // ═══════════════════════════════════════════════════
 //  SYNC SUPABASE v3 — UMA SÓ função de cada
 // ═══════════════════════════════════════════════════
-var SYNC_TIMER     = null;
 var SYNC_SAVING    = false;
 var LAST_EDIT_TIME = 0;
 
@@ -1128,10 +1127,14 @@ function initSync() {
   }, 10000);
 }
 
+// Timer por campo — chave: frota+campo
+var SYNC_TIMERS = {};
+
 function ed(el) {
   var fr  = el.dataset.fr;
   var f   = el.dataset.f;
   var val = el.value;
+  var key = fr + ':' + f;
 
   if (!EDITS[fr]) EDITS[fr] = {};
   EDITS[fr][f] = val;
@@ -1143,8 +1146,10 @@ function ed(el) {
   var sub = document.getElementById('sync-sub');
   if (sub) sub.textContent = 'Salvando...';
 
-  if (SYNC_TIMER) clearTimeout(SYNC_TIMER);
-  SYNC_TIMER = setTimeout(function() {
+  // Timer independente por campo — não cancela outros campos
+  if (SYNC_TIMERS[key]) clearTimeout(SYNC_TIMERS[key]);
+  SYNC_TIMERS[key] = setTimeout(function() {
+    delete SYNC_TIMERS[key];
     fetch('/api/anotacoes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1152,7 +1157,8 @@ function ed(el) {
     })
     .then(function(r) { return r.json(); })
     .then(function(result) {
-      SYNC_SAVING = false;
+      // Só marca como não-salvando quando todos os timers terminarem
+      if (Object.keys(SYNC_TIMERS).length === 0) SYNC_SAVING = false;
       var s2 = document.getElementById('sync-sub');
       if (result.ok) {
         if (s2) s2.textContent = '\u2713 Salvo \u00e0s ' + new Date().toLocaleTimeString('pt-BR');
@@ -1161,11 +1167,11 @@ function ed(el) {
       }
     })
     .catch(function() {
-      SYNC_SAVING = false;
+      if (Object.keys(SYNC_TIMERS).length === 0) SYNC_SAVING = false;
       var s2 = document.getElementById('sync-sub');
       if (s2) s2.textContent = '\u26A0 Sem conex\u00e3o';
     });
-  }, 2000);
+  }, 1500);
 }
 
 function saveAll() {
