@@ -1160,9 +1160,9 @@ function initSync() {
   if (lbl) lbl.innerHTML = '\uD83D\uDFE2 Modo sincronizado \u2014 anota\u00e7\u00f5es compartilhadas com o time';
   if (sub) sub.textContent = 'Carregando...';
 
-  // Carregar na abertura e renderizar tabela
+  // Carregar dados do servidor e atualizar campos (sem re-renderizar a tabela)
   loadData(function(data) {
-    applyGlobalFilter(); // renderiza tabela com dados do servidor
+    updateFields(data);
     if (sub) sub.textContent = '\u2713 ' + Object.keys(data).length + ' anota\u00e7\u00f5es carregadas';
   });
 
