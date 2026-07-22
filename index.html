@@ -1077,7 +1077,8 @@ function drawHBar(id,labels,vals,color){
 // SEM interferir com o que o usuário está digitando
 // ═══════════════════════════════════════════════════════
 
-var TIMERS = {}; // timer por campo: { 'frota:campo': timeoutId }
+var TIMERS = {};
+var SAVING = {}; // requests em andamento: { 'frota:campo': true }
 
 // Chamado ao editar qualquer campo editável
 function saveField(fr, f, val) {
@@ -1086,9 +1087,9 @@ function saveField(fr, f, val) {
   EDITS[fr][f] = val;
   try { localStorage.setItem('mills_v3', JSON.stringify(EDITS)); } catch(x) {}
   setSub('Salvando...');
-  // Cancelar timer pendente deste campo (se houver)
   if (TIMERS[key]) { clearTimeout(TIMERS[key]); delete TIMERS[key]; }
-  // Enviar imediatamente ao servidor
+  // Marcar como salvando — bloqueia syncFromServer neste campo
+  SAVING[key] = true;
   fetch('/api/anotacoes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1096,13 +1097,17 @@ function saveField(fr, f, val) {
   })
   .then(function(r) { return r.json(); })
   .then(function(res) {
+    delete SAVING[key]; // Libera o campo
     if (res.ok) {
       setSub('\u2713 Salvo \u00e0s ' + new Date().toLocaleTimeString('pt-BR'));
     } else {
       setSub('\u26A0 Erro: ' + (res.error || res.detail || 'falha'));
     }
   })
-  .catch(function() { setSub('\u26A0 Sem conex\u00e3o'); });
+  .catch(function() {
+    delete SAVING[key];
+    setSub('\u26A0 Sem conex\u00e3o');
+  });
 }
 
 function ed(el) {
@@ -1146,14 +1151,14 @@ function syncFromServer() {
     .then(function(data) {
       Object.keys(data).forEach(function(fr) {
         if (!EDITS[fr]) EDITS[fr] = {};
-        // dp
-        if (!TIMERS[fr + ':dp']) {
+        // dp — só atualiza se não há timer nem request em andamento
+        if (!TIMERS[fr + ':dp'] && !SAVING[fr + ':dp']) {
           EDITS[fr].dp = data[fr].dp || '';
           var dpEl = document.querySelector('[data-fr="' + fr + '"][data-f="dp"]');
           if (dpEl && document.activeElement !== dpEl) dpEl.value = EDITS[fr].dp;
         }
-        // ob
-        if (!TIMERS[fr + ':ob']) {
+        // ob — só atualiza se não há timer nem request em andamento
+        if (!TIMERS[fr + ':ob'] && !SAVING[fr + ':ob']) {
           EDITS[fr].ob = data[fr].ob || '';
           var obEl = document.querySelector('[data-fr="' + fr + '"][data-f="ob"]');
           if (obEl && document.activeElement !== obEl) obEl.value = EDITS[fr].ob;
