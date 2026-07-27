@@ -866,15 +866,15 @@ function deslSort(col){
 
 // ── SWITCH TAB ─────────────────────────────────────────────────────────
 function switchTab(id,el){
-  // Esconder todas as páginas explicitamente
-  ['pg-dashboard','pg-tabela','pg-deslocamento','pg-historico'].forEach(function(pid){
-    var p = document.getElementById(pid);
-    if(p) p.style.display = 'none';
+  // Remover active de todas as páginas E forçar display:none
+  document.querySelectorAll('.page').forEach(function(p){
+    p.classList.remove('active');
+    p.style.cssText = 'display:none !important';
   });
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  // Mostrar a página selecionada
+  // Mostrar apenas a página selecionada
   var pg = document.getElementById('pg-'+id);
-  if(pg) pg.style.display = 'block';
+  if(pg){ pg.classList.add('active'); pg.style.cssText = 'display:block'; }
   el.classList.add('active');
   // Filtros globais: esconder na aba histórico
   var gf = document.getElementById('global-filters');
