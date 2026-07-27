@@ -870,11 +870,14 @@ function switchTab(id,el){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('pg-'+id).classList.add('active');
   el.classList.add('active');
+  // Esconder filtros globais na aba histórico
+  var gf = document.getElementById('global-filters');
+  if(gf) gf.style.display = (id==='historico') ? 'none' : '';
   try{
     if(id==='dashboard')   updateDashboard(VIS_MR);
     if(id==='tabela')      updateTabela(VIS_MR);
     if(id==='deslocamento')updateDeslocamento(VIS_DESL);
-    if(id==='historico')updateHistorico();
+    if(id==='historico')   updateHistorico();
   }catch(e){console.warn('switchTab:',e);}
 }
 
