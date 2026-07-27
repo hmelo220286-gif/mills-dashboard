@@ -1254,24 +1254,6 @@ function updateHistorico() {
 applyGlobalFilter();
 initSync();
 
-function initSync() {
-  var lbl = document.getElementById('sync-label');
-  if (lbl) lbl.innerHTML = '\uD83D\uDFE2 Modo sincronizado \u2014 anota\u00e7\u00f5es compartilhadas com o time';
-  setSub('Carregando...');
-
-  // Carga inicial após 3s — tabela já renderizada e usuário ainda não editou
-  setTimeout(function() {
-    syncFromServer();
-  }, 3000);
-
-  // Refresh a cada 10s
-  setInterval(syncFromServer, 20000);
-}
-
-// ── INIT ───────────────────────────────────────────────────────────────
-applyGlobalFilter();
-initSync();
-
 </script>
 <div id="st-tip" style="position:fixed;background:rgba(0,40,42,.93);color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;display:none;z-index:300;line-height:1.8;min-width:170px;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>
 </body>
