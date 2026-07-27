@@ -361,7 +361,7 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
 </div></div>
 </div>
 <!-- TABELA -->
-<div class="page" id="pg-tabela">
+<div class="page" id="pg-tabela" style="display:none">
 <div class="filters">
   <div class="frow">
     <div class="fg"><span class="fgl">Frota Mills</span>
@@ -474,7 +474,7 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
 </div></div>
 </div>
 
-<div class="page" id="pg-deslocamento">
+<div class="page" id="pg-deslocamento" style="display:none">
   <div class="desl-kpis">
     <div class="desl-kpi dk-total"><div class="kl">Total Equip.</div><div class="kv" id="dk0">—</div><div class="ks">monitorados</div></div>
     <div class="desl-kpi dk-crit"><div class="kl">Crítico</div><div class="kv" id="dk1">—</div><div class="ks">equipamentos</div></div>
@@ -520,7 +520,7 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
 </div>
 
 
-<div class="page" id="pg-historico">
+<div class="page" id="pg-historico" style="display:none">
   <div class="tw" style="margin-top:10px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
       <input type="text" id="hF" placeholder="Buscar frota, cliente, OM..." oninput="filterHist()"
@@ -866,18 +866,24 @@ function deslSort(col){
 
 // ── SWITCH TAB ─────────────────────────────────────────────────────────
 function switchTab(id,el){
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  // Esconder todas as páginas explicitamente
+  ['pg-dashboard','pg-tabela','pg-deslocamento','pg-historico'].forEach(function(pid){
+    var p = document.getElementById(pid);
+    if(p) p.style.display = 'none';
+  });
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.getElementById('pg-'+id).classList.add('active');
+  // Mostrar a página selecionada
+  var pg = document.getElementById('pg-'+id);
+  if(pg) pg.style.display = 'block';
   el.classList.add('active');
-  // Esconder filtros globais na aba histórico
+  // Filtros globais: esconder na aba histórico
   var gf = document.getElementById('global-filters');
   if(gf) gf.style.display = (id==='historico') ? 'none' : '';
   try{
-    if(id==='dashboard')   updateDashboard(VIS_MR);
-    if(id==='tabela')      updateTabela(VIS_MR);
-    if(id==='deslocamento')updateDeslocamento(VIS_DESL);
-    if(id==='historico')   updateHistorico();
+    if(id==='dashboard')    updateDashboard(VIS_MR);
+    if(id==='tabela')       updateTabela(VIS_MR);
+    if(id==='deslocamento') updateDeslocamento(VIS_DESL);
+    if(id==='historico')    updateHistorico();
   }catch(e){console.warn('switchTab:',e);}
 }
 
