@@ -1253,7 +1253,7 @@ function renderHist() {
     h += '<td style="font-size:11px;white-space:nowrap">' + esc(r.data_exec||'—') + '</td>';
     h += '<td style="font-family:monospace;font-size:11px">' + esc(r.om||'—') + '</td>';
     h += '<td style="font-size:11px;max-width:300px;white-space:normal;line-height:1.3">' + esc((r.desc_om||'').substring(0,200)) + '</td>';
-    h += '<td style="text-align:right;font-size:11px">' + esc(r.horimetro||'—') + '</td>';
+    h += '<td style="text-align:right;font-size:11px">' + (r.horimetro ? parseFloat(r.horimetro).toFixed(2) : '—') + '</td>';
     h += '<td style="font-size:11px;white-space:nowrap">' + esc(r.data_ultima_troca||'—') + '</td>';
     h += '</tr>';
   });
