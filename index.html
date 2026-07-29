@@ -42,7 +42,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
       text-transform:uppercase;letter-spacing:.04em}
 .tab:hover{color:rgba(255,255,255,.85)}
 .tab.active{color:#fff;border-bottom-color:var(--mo)}
-.page{display:none !important;padding:16px 20px 110px}
+.page{display:none !important;padding:16px 20px 20px}
 .page.active{display:block !important}
 #pg-historico.active{position:fixed;top:132px;left:0;right:0;bottom:0;z-index:100;overflow-y:auto;background:var(--bg);padding:16px 20px 20px}
 /* KPIs */
@@ -104,7 +104,7 @@ canvas{display:block;max-width:100%}
 .tsp{flex:1}
 /* TABLE */
 .tw{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--brd);overflow:hidden}
-.ts{overflow-x:auto;overflow-y:auto;max-height:460px}
+.ts{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 280px)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead{position:sticky;top:0;z-index:5}
 th{padding:9px 11px;text-align:left;font-size:10px;font-weight:700;color:var(--tx2);
