@@ -66,7 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .sec::after{content:"";flex:1;height:1px;background:var(--brd)}
 /* CHARTS GRID */
 .dash-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
-.dash-grid.two{grid-template-columns:1fr 1fr}
+
 .dash-grid.two-one{grid-template-columns:2fr 1fr}
 .ch{background:var(--card);border-radius:var(--r);padding:14px;
      box-shadow:var(--sh);border:1px solid var(--brd)}
@@ -346,15 +346,14 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
 <div class="sec">Distribuição &amp; Indicadores</div>
 
 <div class="dash-grid">
-<div class="ch"><div class="cht">Criticidade</div><canvas id="ch0" height="300"></canvas></div>
+  <div class="ch"><div class="cht">&#128200; Criticidade</div><canvas id="ch0" height="280"></canvas></div>
+  <div class="ch"><div class="cht">&#128202; Status Operacional</div><canvas id="ch4" height="280"></canvas></div>
+  <div class="ch"><div class="cht">&#127942; Top 8 Horímetro &gt;500h</div><canvas id="ch5" height="280"></canvas></div>
 </div>
-  <div class="ch"><div class="cht">Por Polo</div><canvas id="ch1" height="300"></canvas></div>
-  <div class="ch"><div class="cht">Por Marca</div><canvas id="ch2" height="300"></canvas></div>
-  <div class="ch"><div class="cht">Por Grupo</div><canvas id="ch3" height="300"></canvas></div>
-</div>
-<div class="dash-grid two">
-  <div class="ch"><div class="cht">Status Operacional</div><canvas id="ch4" height="300"></canvas></div>
-  <div class="ch"><div class="cht">Top 8 Horímetro &gt;500h</div><canvas id="ch5" height="300"></canvas></div>
+<div class="dash-grid">
+  <div class="ch"><div class="cht">&#127758; Por Polo</div><canvas id="ch1" height="240"></canvas></div>
+  <div class="ch"><div class="cht">&#127981; Por Marca</div><canvas id="ch2" height="240"></canvas></div>
+  <div class="ch"><div class="cht">&#9881; Por Grupo</div><canvas id="ch3" height="240"></canvas></div>
 </div>
 <div class="sec">Top 10 – Maior Horímetro Sem Troca</div>
 <div class="tw"><div class="ts" style="max-height:260px">
