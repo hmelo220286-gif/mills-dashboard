@@ -812,6 +812,7 @@ function updateDeslocamento(src){
     var wn=Math.round(d.normal/tot2*100),ws=Math.round(d.sem_reg/tot2*100);
     var dist=d.dist_max>0?d.dist_max.toLocaleString('pt-BR',{maximumFractionDigits:1})+' km':'\u2014';
     h+='<tr style="cursor:pointer" data-fr="'+esc(d.frota)+'" onclick="openDeslDetail(this.dataset.fr,this.dataset.op)" data-op="'+esc(d.operacao||'')+'" title="Clique para ver registros">';
+    h+='<td><span class="fm">'+esc(d.frota)+'</span></td>';
     h+='<td style="font-size:11px">'+esc(d.operacao||'\u2014')+'</td>';
     h+='<td><b>'+esc(d.enc||'\u2014')+'</b></td>';
     h+='<td style="font-size:11px">'+esc(d.polo||'\u2014')+'</td>';
