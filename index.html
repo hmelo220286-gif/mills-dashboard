@@ -245,9 +245,12 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
 .desl-modal .sub{font-size:12px;color:var(--tx3);margin-bottom:14px}
 .desl-modal-body{overflow-y:auto;flex:1}
 .desl-modal table{width:100%;font-size:12px;border-collapse:collapse}
-.desl-modal th{background:var(--mg);color:#fff;padding:7px 10px;text-align:left;position:sticky;top:0}
-.desl-modal td{padding:6px 10px;border-bottom:1px solid var(--brd)}
+.desl-modal th{background:var(--mg);color:#fff;padding:7px 10px;text-align:center;position:sticky;top:0}
+.desl-modal td{padding:6px 10px;border-bottom:1px solid var(--brd);text-align:center}
 .desl-modal tr:hover td{background:var(--ice)}
+.desl-modal .dd-filters{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.desl-modal .dd-filters label{font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.desl-modal .dd-filters select{font-size:12px;padding:5px 8px;border:1px solid var(--brd2);border-radius:6px;background:#fff;color:var(--tx);cursor:pointer}
 .dc-C{color:#b91c1c;font-weight:700}
 .dc-A{color:#d97706;font-weight:600}
 .dc-N{color:#166534}
@@ -498,6 +501,16 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
       </div>
       <button class="desl-modal-close" onclick="closeDeslDetail()">&times;</button>
     </div>
+    <div class="dd-filters">
+      <label for="dd-filter-crit">Criticidade</label>
+      <select id="dd-filter-crit" onchange="renderDeslTable()">
+        <option value="">Todas</option>
+        <option value="C">Crítico</option>
+        <option value="A">Atenção</option>
+        <option value="N">Normal</option>
+        <option value="S">Sem registro</option>
+      </select>
+    </div>
     <div class="desl-modal-body">
       <table>
         <thead><tr>
@@ -531,28 +544,6 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
 </div>
 </div>
-</div>
-
-<div class="desl-modal-bg" id="desl-detail-bg" onclick="if(event.target===this)closeDeslDetail()">
-  <div class="desl-modal">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <h3 id="dd-title">Detalhes</h3>
-        <div class="sub" id="dd-sub"></div>
-      </div>
-      <button class="desl-modal-close" onclick="closeDeslDetail()">&times;</button>
-    </div>
-    <div class="desl-modal-body">
-      <table>
-        <thead><tr>
-          <th>Data</th>
-          <th>Distância (km)</th>
-          <th>Criticidade</th>
-        </tr></thead>
-        <tbody id="dd-body"></tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL -->
@@ -1252,29 +1243,51 @@ function updateHistorico() {
 }
 
 
+var DD_RECORDS = [];
+
 function openDeslDetail(frota, operacao) {
-  var records = DESL_DETAIL[frota] || [];
+  DD_RECORDS = DESL_DETAIL[frota] || [];
   document.getElementById('dd-title').textContent = frota + (operacao ? ' — ' + operacao : '');
-  
-  var critico = records.filter(function(r){return r.c==='C';}).length;
-  var atencao = records.filter(function(r){return r.c==='A';}).length;
-  var normal  = records.filter(function(r){return r.c==='N';}).length;
-  var semreg  = records.filter(function(r){return r.c==='S';}).length;
+
+  var critico = DD_RECORDS.filter(function(r){return r.c==='C';}).length;
+  var atencao = DD_RECORDS.filter(function(r){return r.c==='A';}).length;
+  var normal  = DD_RECORDS.filter(function(r){return r.c==='N';}).length;
+  var semreg  = DD_RECORDS.filter(function(r){return r.c==='S';}).length;
   document.getElementById('dd-sub').innerHTML =
     '<span class="dc-C">&#9632; Crítico: ' + critico + '</span> &nbsp;' +
     '<span class="dc-A">&#9632; Atenção: ' + atencao + '</span> &nbsp;' +
     '<span class="dc-N">&#9632; Normal: ' + normal + '</span> &nbsp;' +
     '<span class="dc-S">&#9632; Sem reg.: ' + semreg + '</span>';
 
+  var filterEl = document.getElementById('dd-filter-crit');
+  if (filterEl) filterEl.value = '';
+
+  renderDeslTable();
+  document.getElementById('desl-detail-bg').classList.add('show');
+}
+
+function renderDeslTable() {
   var labels = {C:'Crítico',A:'Atenção',N:'Normal',S:'Sem registro'};
+  var filterEl = document.getElementById('dd-filter-crit');
+  var filterVal = filterEl ? filterEl.value : '';
+
+  var rows = DD_RECORDS.filter(function(r) {
+    return !filterVal || r.c === filterVal;
+  });
+
+  rows = rows.slice().sort(function(a, b) {
+    var ka = parseFloat(a.km) || 0;
+    var kb = parseFloat(b.km) || 0;
+    return kb - ka;
+  });
+
   var h = '';
-  records.forEach(function(r) {
+  rows.forEach(function(r) {
     h += '<tr><td>' + r.d + '</td>' +
-         '<td style="text-align:right">' + (r.km || '—') + '</td>' +
+         '<td>' + (r.km || '—') + '</td>' +
          '<td class="dc-' + r.c + '">' + labels[r.c] + '</td></tr>';
   });
   document.getElementById('dd-body').innerHTML = h || '<tr><td colspan="3" style="text-align:center;color:var(--tx3)">Sem registros</td></tr>';
-  document.getElementById('desl-detail-bg').classList.add('show');
 }
 
 function closeDeslDetail() {
