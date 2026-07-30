@@ -595,11 +595,8 @@ function filterMR(f){
 
 function filterDESL(f, frotas_set){
   return BASE_DESL.filter(function(d){
-    if(frotas_set && (f.est||f.grp||f.mrc||f.crit)){
-      if(!frotas_set[d.frota]) return false;
-    }
+    if(frotas_set && !frotas_set[d.frota]) return false;
     if(f.frota && d.frota.toLowerCase().indexOf(f.frota)<0) return false;
-    if(f.enc   && (d.enc||'')!==f.enc)                      return false;
     if(f.polo  && (d.polo||'')!==f.polo)                    return false;
     if(f.dcrit && (d.crit_pred||'')!==f.dcrit)              return false;
     return true;
@@ -610,7 +607,7 @@ function applyGlobalFilter(){
   var f = getFilters();
   VIS_MR = filterMR(f);
   var frotas_set = null;
-  if(f.est||f.grp||f.mrc||f.crit){
+  if(f.enc||f.est||f.cid||f.uni||f.grp||f.mrc||f.crit){
     frotas_set = {};
     VIS_MR.forEach(function(d){ frotas_set[d.frota]=1; });
   }
