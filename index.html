@@ -293,7 +293,8 @@ td input.ei:focus,td textarea.ei:focus{outline:none;border-color:var(--mo);backg
     <div class="fg"><span class="fgl" style="color:rgba(255,255,255,.85)">Encarregado</span>
       <select class="fgs" id="gEnc" onchange="applyGlobalFilter()"
         style="background:#fff;border-color:#bbb;color:#1a2228">
-        <option value="">Todos</option><option value="Alexandre">Alexandre</option><option value="Bruno">Bruno</option><option value="Caio">Caio</option><option value="Cecilia Goncalves">Cecilia Goncalves</option><option value="Daniel">Daniel</option><option value="Eder Nunes">Eder Nunes</option><option value="Francinei">Francinei</option><option value="Hailton">Hailton</option><option value="Isaias">Isaias</option><option value="Jardel">Jardel</option><option value="Jonas">Jonas</option><option value="Julio Amorim">Julio Amorim</option><option value="Leasing - Henrique Melo">Leasing - Henrique Melo</option><option value="Luciano">Luciano</option><option value="Rafael">Rafael</option><option value="Silvio">Silvio</option><option value="Sérgio">Sérgio</option><option value="Tiago Alcino">Tiago Alcino</option>
+        <option value="">Todos</option>
+      </select>
       </select>
     </div>
     <div class="fg"><span class="fgl" style="color:rgba(255,255,255,.85)">Polo</span>
@@ -959,7 +960,7 @@ function loadF(file){
         var d=JSON.parse(ev.target.result);
         if(!Array.isArray(d))d=Object.values(d);
         BASE_MR.length=0;d.forEach(function(r){BASE_MR.push(r);});
-        closeU();applyGlobalFilter();
+        closeU();populateFilterOptions();applyGlobalFilter();
         showToast('\u2713 '+d.length+' registros importados');
       }catch(err){showToast('Erro: '+err.message);}
     };
@@ -1302,6 +1303,27 @@ function closeDeslDetail() {
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────
+function populateFilterOptions(){
+  function opts(sel, values, allLabel){
+    var el = document.getElementById(sel);
+    if(!el) return;
+    var cur = el.value;
+    var vals = Array.from(new Set(values.filter(function(v){return v && v!=='0' && v!=='-';})))
+      .sort(function(a,b){return a.localeCompare(b,'pt');});
+    var h = '<option value="">'+allLabel+'</option>';
+    vals.forEach(function(v){ h += '<option value="'+esc(v)+'">'+esc(v)+'</option>'; });
+    el.innerHTML = h;
+    if(vals.indexOf(cur)>=0) el.value = cur;
+  }
+  opts('gEnc', BASE_MR.map(function(d){return d.encarregado;}), 'Todos');
+  opts('gPol', BASE_MR.map(function(d){return d.polo;}), 'Todos');
+  opts('gEst', BASE_MR.map(function(d){return d.estado;}), 'Todos');
+  opts('gCid', BASE_MR.map(function(d){return d.cidade;}), 'Todas');
+  opts('gUni', BASE_MR.map(function(d){return d.unidade;}), 'Todas');
+  opts('gGrp', BASE_MR.map(function(d){return d.grupo_norm;}), 'Todos');
+  opts('gMrc', BASE_MR.map(function(d){return d.marca;}), 'Todas');
+}
+populateFilterOptions();
 applyGlobalFilter();
 try{updateHistorico();}catch(e){}
 initSync();
